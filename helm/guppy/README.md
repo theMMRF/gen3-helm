@@ -97,3 +97,19 @@ A Helm chart for gen3 Guppy Service
 | strategy.rollingUpdate.maxUnavailable | int | `0` | Maximum amount of pods that can be unavailable during the update. |
 | volumeMounts | list | `[{"mountPath":"/guppy/guppy_config.json","name":"guppy-config","readOnly":true,"subPath":"guppy_config.json"}]` | Volumes to mount to the container. |
 | volumes | list | `[{"configMap":{"items":[{"key":"guppy_config.json","path":"guppy_config.json"}],"name":"manifest-guppy"},"name":"guppy-config"}]` | Volumes to attach to the pod. |
+
+### Additional environment variables
+
+`env` defaults to an empty list and appends standard Kubernetes container env
+entries. For a Guppy image supporting selective visibility:
+
+```yaml
+guppy:
+  env:
+    - name: FILE_VISIBILITY_ENABLED
+      value: "true"
+```
+
+Use the coordinated ingestion and rollout procedure before enabling this flag.
+This chart change is based on MMRF's pinned chart commit
+`c5e61079f8fc9af89aba18da286a0f089be26296`.

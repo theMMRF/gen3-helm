@@ -1,0 +1,16 @@
+name: Selective visibility
+on:
+  pull_request:
+  push:
+    branches: [feature/selective-file-visibility, feature/selective-file-visibility-13.1]
+permissions:
+  contents: read
+jobs:
+  verification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4.3.0
+      - run: helm dependency build helm/gen3
+      - run: helm dependency build helm/guppy --skip-refresh
+      - run: helm template visibility-test helm/guppy --set global.hostname=commons.example --set global.tierAccessLevel=private --set global.tierAccessLimit=1000 --set 'env[0].name=FILE_VISIBILITY_ENABLED' --set-string 'env[0].value=true'
