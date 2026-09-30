@@ -7,6 +7,7 @@ on:
 
 jobs:
   release:
+    if: github.repository_owner == 'uc-cdis'
     permissions:
       contents: write
     runs-on: ubuntu-latest
