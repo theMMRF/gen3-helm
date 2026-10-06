@@ -9,8 +9,17 @@ jobs:
   verification:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: azure/setup-helm@v4.3.0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
       - run: helm dependency build helm/gen3
       - run: helm dependency build helm/guppy --skip-refresh
-      - run: helm template visibility-test helm/guppy --set global.hostname=commons.example --set global.tierAccessLevel=private --set global.tierAccessLimit=1000 --set 'env[0].name=FILE_VISIBILITY_ENABLED' --set-string 'env[0].value=true'
+      - run: python3 -m pip install PyYAML==6.0.2
+      - run: |
+          helm template visibility-test helm/guppy --set global.hostname=commons.example --set global.tierAccessLevel=private --set global.tierAccessLimit=1000 --set 'env[0].name=FILE_VISIBILITY_ENABLED' --set-string 'env[0].value=true' > /tmp/visibility-rendered.yaml
+          python3 - <<'CHECK'
+          import yaml
+          deployments = [doc for doc in yaml.safe_load_all(open('/tmp/visibility-rendered.yaml')) if doc and doc.get('kind') == 'Deployment']
+          assert any(item == {'name': 'FILE_VISIBILITY_ENABLED', 'value': 'true'} for doc in deployments for container in doc['spec']['template']['spec']['containers'] for item in container.get('env', []))
+          CHECK
