@@ -1,6 +1,7 @@
 """Render both frontend layouts and assert graph gates and default compatibility."""
 from pathlib import Path
 import subprocess
+import re
 import tempfile
 import unittest
 import yaml
@@ -60,6 +61,18 @@ class GraphMetadataGateTests(unittest.TestCase):
                         self.assertEqual(original[filename], gated[filename], filename)
                 self.assertEqual(original['peregrine-service.conf'].split('location /api/search')[0],
                                  gated['peregrine-service.conf'].split('location /api/search')[0])
+
+    def test_static_dictionary_remains_public_without_matching_graph_record_routes(self):
+        pattern = r"^/api/v0/submission/_dictionary(/[^/]+)?/?$"
+        source = configs(render("gen3ff", True))["sheepdog-service.conf"]
+        public = source.split("location ~ " + pattern + " {", 1)[1]
+        self.assertNotIn(GUARD, public)
+        self.assertIn('proxy_set_header   Subdir /api;', public)
+        self.assertIn('rewrite ^/api/(.*) /$1 break;', public)
+        for path in ("/api/v0/submission/_dictionary", "/api/v0/submission/_dictionary/_all/", "/api/v0/submission/_dictionary/case"):
+            self.assertIsNotNone(re.fullmatch(pattern, path))
+        for path in ("/api/v0/submission/MMRF/COMMPASS-IA24/export", "/api/v0/submission/graphql", "/api/v0/submission/_dictionary/MMRF/files", "/api/v0/submission/_dictionaryfoo"):
+            self.assertIsNone(re.fullmatch(pattern, path))
 
     def test_protected_overrides_fail_closed_only_when_enabled(self):
         for filename in ("peregrine-service.conf", "sheepdog-service.conf", "portal-service.conf"):

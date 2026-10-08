@@ -140,7 +140,10 @@ Peregrine search/GraphQL/schema routes and Sheepdog `/api/` routes require Arbor
 `peregrine/access` on `/services/graph-metadata`, using the existing `/gen3-authz`
 subrequest. Grant that action only to trusted administrators/ingestion users and
 retain their normal project permissions. Modern Gen3FF, login, Guppy, Analysis and
-Fence download routes keep their existing behavior. Standard graph query/export/
+Fence download routes keep their existing behavior. The modern Data Dictionary's
+static `/_dictionary` and single-entry schema endpoints remain available through
+a narrowly matched route; program/project dictionary and graph-record APIs still
+require the gate. Standard graph query/export/
 submission SDK calls are also restricted; ordinary file downloads are unaffected.
 Protected service configurations cannot be overridden through `additionalConfigs`
 while this gate is enabled: rendering fails rather than silently omitting a gate.
