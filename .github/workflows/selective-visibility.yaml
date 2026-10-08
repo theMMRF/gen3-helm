@@ -16,6 +16,8 @@ jobs:
       - run: helm dependency build helm/gen3
       - run: helm dependency build helm/guppy --skip-refresh
       - run: python3 -m pip install PyYAML==6.0.2
+      - run: helm dependency build helm/revproxy --skip-refresh
+      - run: python3 .github/scripts/test_graph_metadata_gate.py -v
       - run: |
           helm template visibility-test helm/guppy --set global.hostname=commons.example --set global.tierAccessLevel=private --set global.tierAccessLimit=1000 --set 'env[0].name=PROJECT_VISIBILITY_ENABLED' --set-string 'env[0].value=true' > /tmp/visibility-rendered.yaml
           python3 - <<'CHECK'

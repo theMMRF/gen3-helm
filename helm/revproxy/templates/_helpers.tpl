@@ -66,3 +66,18 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/* Gate metadata routes with the existing Arborist auth subrequest. */}}
+{{- define "revproxy.graphMetadataContent" -}}
+{{- $content := .content -}}
+{{- if .root.Values.graphMetadataAdmin.enabled -}}
+{{- $guard := "\n              set $authz_resource \"/services/graph-metadata\";\n              set $authz_method \"access\";\n              set $authz_service \"peregrine\";\n              auth_request /gen3-authz;" -}}
+{{- range .locations -}}
+{{- if not (contains . $content) -}}
+{{- fail (printf "graphMetadataAdmin cannot find protected route %s" .) -}}
+{{- end -}}
+{{- $content = replace . (printf "%s%s" . $guard) $content -}}
+{{- end -}}
+{{- end -}}
+{{- $content -}}
+{{- end -}}
