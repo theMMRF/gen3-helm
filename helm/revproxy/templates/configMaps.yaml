@@ -4,23 +4,42 @@ metadata:
   name: revproxy-nginx-subconf
 data:
 {{- $additionalConfigs := .Values.additionalConfigs | default dict }}
+{{- if .Values.graphMetadataAdmin.enabled }}
+{{- range $filename := list "peregrine-service.conf" "sheepdog-service.conf" "portal-service.conf" }}
+{{- if hasKey $additionalConfigs $filename }}
+{{- fail (printf "graphMetadataAdmin cannot protect additionalConfigs override %s; use the standard protected routes" $filename) }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- range $path, $bytes := .Files.Glob "gen3.nginx.conf/*.conf" }}
 {{- $filename := ($a := split "/" $path)._1 }}
 {{- if not (hasKey $additionalConfigs $filename) }}
   {{ $filename }}: |
+  {{- if eq $filename "peregrine-service.conf" }}
+  {{- include "revproxy.graphMetadataContent" (dict "root" $ "content" ($bytes | toString) "locations" (list "location /api/search {" "location /api/v0/submission/graphql {" "location /api/v0/submission/getschema {")) | nindent 4 }}
+  {{- else if eq $filename "sheepdog-service.conf" }}
+  {{- include "revproxy.graphMetadataContent" (dict "root" $ "content" ($bytes | toString) "locations" (list "location /api/ {")) | nindent 4 }}
+  {{- if $.Values.graphMetadataAdmin.enabled }}
+  {{- /* The modern Data Dictionary reads only this static schema endpoint.
+        A single optional entry component cannot match program/project APIs. */}}
+  {{- $dictionary := replace "location /api/ {" "location ~ ^/api/v0/submission/_dictionary(/[^/]+)?/?$ {" ($bytes | toString) }}
+  {{- $dictionary | nindent 4 }}
+  {{- end }}
+  {{- else }}
   {{- $bytes | toString | nindent 4 }}
+  {{- end }}
 {{- end }}
 {{- end}}
 {{- if eq "gen3ff" .Values.global.frontendRoot }}
   {{ "frontend-framework-service.conf" }}: |
   {{- .Files.Get "gen3.nginx.conf/gen3ff-as-root/frontend-framework-service.conf" | nindent 4}}
   {{ "portal-service.conf" }}: |
-  {{- .Files.Get "gen3.nginx.conf/gen3ff-as-root/portal-service.conf" | nindent 4}}
+  {{- include "revproxy.graphMetadataContent" (dict "root" $ "content" (.Files.Get "gen3.nginx.conf/gen3ff-as-root/portal-service.conf") "locations" (list "location /portal {")) | nindent 4}}
 {{- else }}
   {{ "frontend-framework-service.conf" }}: |
   {{- .Files.Get "gen3.nginx.conf/portal-as-root/frontend-framework-service.conf"| nindent 4}}
   {{ "portal-service.conf" }}: |
-  {{- .Files.Get "gen3.nginx.conf/portal-as-root/portal-service.conf" | nindent 4}}
+  {{- include "revproxy.graphMetadataContent" (dict "root" $ "content" (.Files.Get "gen3.nginx.conf/portal-as-root/portal-service.conf") "locations" (list "location / {")) | nindent 4}}
 {{- end }}
 {{- if .Values.enableRobotsTxt }}
   {{ "robots-txt.conf" }}: |

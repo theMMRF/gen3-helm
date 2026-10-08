@@ -132,3 +132,27 @@ Published versions of this chart are listed in the
 | strategy.rollingUpdate.maxUnavailable | int | `0` | Maximum amount of pods that can be unavailable during the update. |
 | tolerations | list | `[]` | Tolerations to use for the deployment. |
 | userhelperEnabled | bool | `false` |  |
+
+## Optional administrator-only graph metadata
+
+`graphMetadataAdmin.enabled` defaults to `false`. When enabled, the legacy portal,
+Peregrine search/GraphQL/schema routes and Sheepdog `/api/` routes require Arborist
+`peregrine/access` on `/services/graph-metadata`, using the existing `/gen3-authz`
+subrequest. Grant that action only to trusted administrators/ingestion users and
+retain their normal project permissions. Modern Gen3FF, login, Guppy, Analysis and
+Fence download routes keep their existing behavior. The modern Data Dictionary's
+static `/_dictionary` and single-entry schema endpoints remain available through
+a narrowly matched route; program/project dictionary and graph-record APIs still
+require the gate. Standard graph query/export/
+submission SDK calls are also restricted; ordinary file downloads are unaffected.
+Protected service configurations cannot be overridden through `additionalConfigs`
+while this gate is enabled: rendering fails rather than silently omitting a gate.
+
+The gateway is only one layer. Remove ordinary users' Peregrine/Sheepdog read
+permissions in usersync, keep `global.publicDataSets: false`, and audit graph
+projects: Peregrine automatically reads projects with `availability_type: Open`
+even without a read grant. Use `Restricted` for projects containing private files;
+for an entirely admin-only graph, no project may be `Open`. Unset availability
+also does not enable Peregrine's Open-project fallback. These are existing Gen3
+settings; no Peregrine/Sheepdog fork is needed. Audit effective wildcard grants and
+protect separate metadata/discovery stores before claiming file confidentiality.

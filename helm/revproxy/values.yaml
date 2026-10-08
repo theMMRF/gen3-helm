@@ -313,3 +313,8 @@ openshiftRoute:
     insecureEdgeTerminationPolicy: "Redirect"
   # -- (string) Wildcard policy for the Route. Valid options are "None" and "Subdomain".
   wildcardPolicy: "None"
+
+# -- Reserve legacy portal, graph queries and submission/export routes for the
+# /services/graph-metadata resource (peregrine/access). Default preserves behavior.
+graphMetadataAdmin:
+  enabled: false
