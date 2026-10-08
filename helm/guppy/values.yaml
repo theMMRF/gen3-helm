@@ -231,5 +231,5 @@ selectorLabels:
 # -- (map) Will completely override the commonLabels defined in the common chart's _label_setup.tpl
 commonLabels:
 
-# -- Additional container environment variables, e.g. FILE_VISIBILITY_ENABLED.
+# -- Additional container environment variables, e.g. PROJECT_VISIBILITY_ENABLED.
 env: []
